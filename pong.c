@@ -4,6 +4,7 @@
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <math.h>
 
 #define WIDTH 1200
 #define HEIGHT 900
@@ -16,6 +17,27 @@ struct racket {
   double w;
   double h;
 };
+
+struct Circle{
+  double x;
+  double y;
+  double r;
+};
+
+void fillBall(SDL_Surface *surface, struct Circle *ball, Uint32 color) {
+  double radiusSquared = pow(ball->r,2);
+  for (double x = ball->x - ball->r; x < ball->x + ball->r;
+       x++) {
+    for (double y = ball->y - ball->r;
+         y < ball->y + ball->r; y++) {
+      double distSquared = pow(x - ball->x,2) + pow(y - ball->y,2);
+      if(distSquared < radiusSquared){
+        SDL_Rect pixel = (SDL_Rect){x, y, 1, 1};
+        SDL_FillRect(surface, &pixel, color);
+      }
+    }
+  }
+}
 
 void fillRacket(SDL_Surface *surface, struct racket *rectangle, Uint32 color) {
   for (double x = rectangle->x - rectangle->w; x < rectangle->x + rectangle->w;
@@ -39,11 +61,11 @@ int main() {
   struct racket player1 = {40, 150, 10, 100};
   struct racket player2 = {1160, 150, 10, 100};
   struct racket midLine = {600, 0, 10, HEIGHT};
+  struct Circle ball = {200,200,30};
   SDL_Rect eraseRect = {0, 0, WIDTH, HEIGHT};
-  fillRacket(surface, &player1, COLOR_WHITE);
   int simulation_running = 1;
   int speed = 5;
-  double x = 0, y = 0;
+  int y = 0;
   SDL_Event event;
   while (simulation_running) {
     while (SDL_PollEvent(&event)) {
@@ -55,10 +77,10 @@ int main() {
       case SDL_KEYDOWN:
         switch (event.key.keysym.sym) {
         case SDLK_DOWN:
-          y = 3;
+          y = 5;
           break;
         case SDLK_UP:
-          y = -3;
+          y = -5;
           break;
         default:
           break;
@@ -93,6 +115,7 @@ int main() {
     fillRacket(surface, &midLine, COLOR_WHITE);
     fillRacket(surface, &player1, COLOR_WHITE);
     fillRacket(surface, &player2, COLOR_WHITE);
+    fillBall(surface,&ball,COLOR_WHITE);
     player2.y += speed;
     if (player2.y + player2.h > HEIGHT) {
       speed = -speed;
