@@ -65,6 +65,19 @@ int hitPlayer(struct Circle *ball, struct racket player,int flag) {
   return 0;
 }
 
+int hitWindow(struct Circle ball,int flag){
+  double radiusSquared = pow(ball.r,2);
+  for(double a = 0 ; a <= WIDTH ; a++){
+    double b = 0;
+    if(flag) b = HEIGHT;
+    double distSquared = pow(a - ball.x,2) + pow(b - ball.y,2);
+    if(distSquared < radiusSquared){
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
 
@@ -76,10 +89,11 @@ int main() {
   struct racket player1 = {40, 150, 10, 100};
   struct racket player2 = {1160, 150, 10, 100};
   struct racket midLine = {600, 0, 10, HEIGHT};
-  struct Circle ball = {85, 145, 30, 5,0};
+  struct Circle ball = {85, 145, 30,5,5};
   SDL_Rect eraseRect = {0, 0, WIDTH, HEIGHT};
   int simulation_running = 1;
-  int speed = 0;
+  int speed = 7;
+  double angle = 2.3;
   int y = 0;
   SDL_Event event;
   while (simulation_running) {
@@ -132,13 +146,18 @@ int main() {
     fillRacket(surface, &player2, COLOR_WHITE);
     fillBall(surface, &ball, COLOR_WHITE);
     player2.y += speed;
-    ball.x += ball.x_v;
-    ball.y += ball.y_v;
+    ball.x += ball.x_v*cos(angle);
+    ball.y += ball.y_v*sin(angle);
+    if(hitWindow(ball,1) || hitWindow(ball,0)){
+      angle = -angle;
+    }
     if (hitPlayer(&ball,player2,1)) {
       ball.x_v = -ball.x_v;
+      angle = -angle;
     }
     if(hitPlayer(&ball,player1,0)){
       ball.x_v = -ball.x_v;
+      angle = -angle;
     }
     if (player2.y + player2.h > HEIGHT) {
       speed = -speed;
