@@ -11,6 +11,7 @@
 #define HEIGHT 900
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
+#define COLOR_BACKGROUND 0xefefefef
 
 struct racket {
   double x;
