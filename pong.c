@@ -52,27 +52,30 @@ void fillRacket(SDL_Surface *surface, struct racket *rectangle, Uint32 color) {
   }
 }
 
-int hitPlayer(struct Circle *ball, struct racket player,int flag) {
+int hitPlayer(struct Circle *ball, struct racket player, int flag) {
   double radiusSquared = pow(ball->r, 2);
   for (double a = player.y - player.h; a <= player.y + player.h; a++) {
     double b = 0;
-    if(flag) b = player.x - player.w;
-    else b = player.x + player.w;
-    double distSquared = pow(a-ball->y,2) + pow(b-ball->x,2);
-    if(distSquared < radiusSquared){
+    if (flag)
+      b = player.x - player.w;
+    else
+      b = player.x + player.w;
+    double distSquared = pow(a - ball->y, 2) + pow(b - ball->x, 2);
+    if (distSquared < radiusSquared) {
       return 1;
     }
   }
   return 0;
 }
 
-int hitWindow(struct Circle ball,int flag){
-  double radiusSquared = pow(ball.r,2);
-  for(double a = 0 ; a <= WIDTH ; a++){
+int hitWindow(struct Circle ball, int flag) {
+  double radiusSquared = pow(ball.r, 2);
+  for (double a = 0; a <= WIDTH; a++) {
     double b = 0;
-    if(flag) b = HEIGHT;
-    double distSquared = pow(a - ball.x,2) + pow(b - ball.y,2);
-    if(distSquared < radiusSquared){
+    if (flag)
+      b = HEIGHT;
+    double distSquared = pow(a - ball.x, 2) + pow(b - ball.y, 2);
+    if (distSquared < radiusSquared) {
       return 1;
     }
   }
@@ -90,12 +93,13 @@ int main() {
   struct racket player1 = {40, 150, 10, 100};
   struct racket player2 = {1160, 150, 10, 100};
   struct racket midLine = {600, 0, 10, HEIGHT};
-  struct Circle ball = {85, 145, 30,5,5};
+  struct Circle ball = {85, 145, 30, 5, 5};
   SDL_Rect eraseRect = {0, 0, WIDTH, HEIGHT};
   int simulation_running = 1;
-  int speed = 7;
+  int speed = 10;
   double angle = 2.3;
-  int y = 0;
+  int yPlayer1 = 0;
+  int yPlayer2 = 0;
   SDL_Event event;
   while (simulation_running) {
     while (SDL_PollEvent(&event)) {
@@ -107,10 +111,16 @@ int main() {
       case SDL_KEYDOWN:
         switch (event.key.keysym.sym) {
         case SDLK_DOWN:
-          y = 5;
+          yPlayer2 = speed;
           break;
         case SDLK_UP:
-          y = -5;
+          yPlayer2 = -speed;
+          break;
+        case SDLK_s:
+          yPlayer1 = speed;
+          break;
+        case SDLK_w:
+          yPlayer1 = -speed;
           break;
         default:
           break;
@@ -120,13 +130,23 @@ int main() {
       case SDL_KEYUP:
         switch (event.key.keysym.sym) {
         case SDLK_DOWN:
-          if (y > 0) {
-            y = 0;
+          if (yPlayer2 > 0) {
+            yPlayer2 = 0;
           }
           break;
         case SDLK_UP:
-          if (y < 0) {
-            y = 0;
+          if (yPlayer2 < 0) {
+            yPlayer2 = 0;
+          }
+          break;
+        case SDLK_s:
+          if (yPlayer1 > 0) {
+            yPlayer1 = 0;
+          }
+          break;
+        case SDLK_w:
+          if (yPlayer1 < 0) {
+            yPlayer1 = 0;
           }
           break;
         default:
@@ -138,33 +158,31 @@ int main() {
         break;
       }
     }
-    if (player1.y + y - player1.h >= 0 && player1.y + y + player1.h < HEIGHT) {
-      player1.y += y;
+    if (player2.y + yPlayer2 - player2.h >= 0 &&
+        player2.y + yPlayer2 + player2.h < HEIGHT) {
+      player2.y += yPlayer2;
+    }
+    if (player1.y + yPlayer1 - player1.h >= 0 &&
+      player1.y + yPlayer1 + player1.h < HEIGHT) {
+      player1.y += yPlayer1;
     }
     SDL_FillRect(surface, &eraseRect, COLOR_BLACK);
     fillRacket(surface, &midLine, COLOR_WHITE);
     fillRacket(surface, &player1, COLOR_WHITE);
     fillRacket(surface, &player2, COLOR_WHITE);
     fillBall(surface, &ball, COLOR_WHITE);
-    player2.y += speed;
-    ball.x += ball.x_v*cos(angle);
-    ball.y += ball.y_v*sin(angle);
-    if(hitWindow(ball,1) || hitWindow(ball,0)){
+    ball.x += ball.x_v * cos(angle);
+    ball.y += ball.y_v * sin(angle);
+    if (hitWindow(ball, 1) || hitWindow(ball, 0)) {
       angle = -angle;
     }
-    if (hitPlayer(&ball,player2,1)) {
+    if (hitPlayer(&ball, player1, 1)) {
       ball.x_v = -ball.x_v;
       angle = -angle;
     }
-    if(hitPlayer(&ball,player1,0)){
+    if (hitPlayer(&ball, player2, 0)) {
       ball.x_v = -ball.x_v;
       angle = -angle;
-    }
-    if (player2.y + player2.h > HEIGHT) {
-      speed = -speed;
-    }
-    if (player2.y - player2.h < 0) {
-      speed = -speed;
     }
     SDL_UpdateWindowSurface(window);
     SDL_Delay(10);
