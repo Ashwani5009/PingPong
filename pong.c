@@ -6,12 +6,16 @@
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define WIDTH 1200
 #define HEIGHT 900
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
 #define COLOR_BACKGROUND 0xefefefef
+#define BALL_MOVEMENT 10
 
 struct racket {
   double x;
@@ -70,17 +74,32 @@ int hitPlayer(struct Circle *ball, struct racket player, int flag) {
 
 int hitWindow(struct Circle ball, int flag) {
   double radiusSquared = pow(ball.r, 2);
-  for (double a = 0; a <= WIDTH; a++) {
-    double b = 0;
-    if (flag)
-      b = HEIGHT;
-    double distSquared = pow(a - ball.x, 2) + pow(b - ball.y, 2);
-    if (distSquared < radiusSquared) {
-      return 1;
+  if (flag == 0 || flag == 1) {
+    for (double a = 0; a <= WIDTH; a++) {
+      double b = 0;
+      if (flag)
+        b = HEIGHT;
+      double distSquared = pow(a - ball.x, 2) + pow(b - ball.y, 2);
+      if (distSquared < radiusSquared) {
+        return 1;
+      }
     }
+    return 0;
+  } else {
+    for (double a = 0; a <= HEIGHT; a++) {
+      double b = 0;
+      if (flag == 3)
+        b = WIDTH;
+      double distSquared = pow(b - ball.x, 2) + pow(a - ball.y, 2);
+      if (distSquared < radiusSquared) {
+        return 1;
+      }
+    }
+    return 0;
   }
-  return 0;
 }
+
+double randomOffset() { return ((rand() % 21) - 10) * M_PI / 180; }
 
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -93,14 +112,14 @@ int main() {
   struct racket player1 = {40, 150, 10, 100};
   struct racket player2 = {1160, 150, 10, 100};
   struct racket midLine = {600, 0, 10, HEIGHT};
-  struct Circle ball = {85, 145, 30, 5, 5};
+  struct Circle ball = {85, 145, 30, 15, 15};
   SDL_Rect eraseRect = {0, 0, WIDTH, HEIGHT};
   int simulation_running = 1;
-  int speed = 10;
   double angle = 2.3;
   int yPlayer1 = 0;
   int yPlayer2 = 0;
   SDL_Event event;
+  srand(time(NULL));
   while (simulation_running) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
@@ -111,16 +130,16 @@ int main() {
       case SDL_KEYDOWN:
         switch (event.key.keysym.sym) {
         case SDLK_DOWN:
-          yPlayer2 = speed;
+          yPlayer2 = BALL_MOVEMENT;
           break;
         case SDLK_UP:
-          yPlayer2 = -speed;
+          yPlayer2 = -BALL_MOVEMENT;
           break;
         case SDLK_s:
-          yPlayer1 = speed;
+          yPlayer1 = BALL_MOVEMENT;
           break;
         case SDLK_w:
-          yPlayer1 = -speed;
+          yPlayer1 = -BALL_MOVEMENT;
           break;
         default:
           break;
@@ -163,7 +182,7 @@ int main() {
       player2.y += yPlayer2;
     }
     if (player1.y + yPlayer1 - player1.h >= 0 &&
-      player1.y + yPlayer1 + player1.h < HEIGHT) {
+        player1.y + yPlayer1 + player1.h < HEIGHT) {
       player1.y += yPlayer1;
     }
     SDL_FillRect(surface, &eraseRect, COLOR_BLACK);
@@ -174,16 +193,21 @@ int main() {
     ball.x += ball.x_v * cos(angle);
     ball.y += ball.y_v * sin(angle);
     if (hitWindow(ball, 1) || hitWindow(ball, 0)) {
-      angle = -angle;
+      angle = -angle + randomOffset();
     }
-    if (hitPlayer(&ball, player1, 1)) {
-      ball.x_v = -ball.x_v;
-      angle = -angle;
+    if (hitWindow(ball, 2) || hitWindow(ball, 3)) {
+      printf("restart\n");
+      // struct Circle ball = {85, 145, 30, 15, 15};
+      ball.x = 85;
+      ball.y = 145;
     }
-    if (hitPlayer(&ball, player2, 0)) {
-      ball.x_v = -ball.x_v;
-      angle = -angle;
+    if (hitPlayer(&ball, player1, 1) || hitPlayer(&ball, player2, 0)) {
+      angle = M_PI - angle + randomOffset();
+      if (fabs(sin(angle)) > 0.9) {
+        angle = angle > 0 ? M_PI / 4 : -M_PI / 4;
+      }
     }
+    angle = fmod(angle, 2 * M_PI);
     SDL_UpdateWindowSurface(window);
     SDL_Delay(10);
   }
